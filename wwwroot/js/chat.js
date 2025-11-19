@@ -149,15 +149,13 @@ class ChatWidget {
                 }),
             });
 
-            const data = await response.json();
-            if (data.reply) {
-                this.addMessage('assistant', data.reply);
-                // Display raw completion metadata (can be large)
-                const rawSummary = JSON.stringify(data.raw);
-                this.addMessage('assistant', 'RAW: ' + rawSummary);
-            } else {
-                this.addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-            }
+                        const data = await response.json();
+                        if (data.reply) {
+                            // Only show assistant reply; suppress product catalogue & raw dump
+                            this.addMessage('assistant', data.reply);
+                        } else {
+                                this.addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+                        }
         } catch (error) {
             console.error('Error sending message:', error);
             this.addMessage('assistant', 'Sorry, I\'m having trouble connecting. Please try again.');
@@ -165,6 +163,8 @@ class ChatWidget {
             this.hideTyping();
         }
     }
+
+        // Removed product table & raw completion rendering per user request.
 
     addMessage(role, content, recommendations = null) {
         const messagesContainer = document.getElementById('chatMessages');

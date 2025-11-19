@@ -319,3 +319,106 @@
         right: 20px;
     }
 }
+
+/* Product table / catalogue styles */
+.product-table-container {
+    margin-top: 12px;
+    background: #ffffff;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.product-table-header {
+    background: linear-gradient(135deg,#f0f4f8,#e2e8f0);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.product-table-actions button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.product-table-actions button:hover {
+    background: #0056b3;
+}
+
+.product-table-wrapper {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.product-table thead {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    z-index: 1;
+}
+
+.product-table th, .product-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #edf1f4;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.product-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.product-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.price-cell {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.category-pill {
+    background: #eef2f7;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #44526b;
+}
+
+.show-more-toggle {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #f8f9fa;
+    border: none;
+    border-top: 1px solid #e1e5e9;
+    cursor: pointer;
+    color: #007bff;
+    transition: background .2s;
+}
+
+.show-more-toggle:hover {
+    background: #eef2f7;
+}
