@@ -151,8 +151,9 @@ class ChatWidget {
 
                         const data = await response.json();
                         if (data.reply) {
-                            // Only show assistant reply; suppress product catalogue & raw dump
+                            // Show assistant reply and attempt formatted table parse
                             this.addMessage('assistant', data.reply);
+                            this.renderFormattedReply(data.reply);
                         } else {
                                 this.addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
                         }
@@ -164,7 +165,64 @@ class ChatWidget {
         }
     }
 
-        // Removed product table & raw completion rendering per user request.
+        renderFormattedReply(replyText) {
+                // Detect table markers TABLE_START ... TABLE_END
+                const startIdx = replyText.indexOf('TABLE_START');
+                const endIdx = replyText.indexOf('TABLE_END');
+                if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return; // no table
+
+                const tableSection = replyText.substring(startIdx + 'TABLE_START'.length, endIdx).trim();
+                // Expect header line followed by rows separated by newlines, pipe delimited
+                const lines = tableSection.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length < 2) return;
+                // Remove any markdown pipes alignment artifacts
+                const header = lines[0];
+                const rows = lines.slice(1);
+
+                const headerCells = header.split('|').map(c => c.trim()).filter(c => c);
+                if (headerCells.length < 5) return; // ensure expected columns
+
+                const parsedRows = rows.map(r => r.split('|').map(c => c.trim()).filter(c => c));
+                if (!parsedRows.length) return;
+
+                const messagesContainer = document.getElementById('chatMessages');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'chat-message assistant';
+
+                const tableHtml = `
+                <div class="message-bubble assistant">
+                    <div class="product-table-container">
+                        <div class="product-table-header"><span>Suggested Products (${parsedRows.length})</span></div>
+                        <div class="product-table-wrapper">
+                            <table class="product-table">
+                                <thead><tr>${headerCells.map(h => `<th>${this.escapeHtml(h)}</th>`).join('')}</tr></thead>
+                                <tbody>
+                                    ${parsedRows.map(cols => `<tr>${cols.map((c,i) => {
+                                            const cell = this.escapeHtml(c);
+                                            if (headerCells[i].toLowerCase()==='price' && /^£?\d/.test(cell)) {
+                                                    const num = cell.replace(/[^0-9.]/g,'');
+                                                    return `<td class="price-cell">£${Number(num).toFixed(2)}</td>`;
+                                            }
+                                            if (headerCells[i].toLowerCase()==='category') {
+                                                    return `<td><span class="category-pill">${cell}</span></td>`;
+                                            }
+                                            return `<td>${cell}</td>`;
+                                    }).join('')}</tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>`;
+
+                wrapper.innerHTML = tableHtml;
+                messagesContainer.appendChild(wrapper);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        escapeHtml(str) {
+                return str.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+        }
 
     addMessage(role, content, recommendations = null) {
         const messagesContainer = document.getElementById('chatMessages');

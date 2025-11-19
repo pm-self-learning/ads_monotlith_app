@@ -93,18 +93,37 @@ app.MapPost("/api/chat/products", async (RetailMonolith.Models.ChatProductReques
     if (string.IsNullOrWhiteSpace(req.message))
         return Results.BadRequest(new { error = "Empty message" });
 
-    // Pull active products (minimal fields to reduce token usage)
-    var products = await db.Products
+    // Pull active products; create a small subset for suggestion context (simple keyword filter fallback to random sample)
+    var allActive = await db.Products
         .Where(p => p.IsActive)
         .Select(p => new { p.Id, p.Sku, p.Name, p.Category, p.Price, p.Currency })
         .ToListAsync(ct);
 
-    // Serialize catalogue - consider truncation/pagination for large sets
-    var productsJson = JsonSerializer.Serialize(products);
+    var terms = req.message.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(t => t.ToLowerInvariant()).ToHashSet();
+
+    var filtered = allActive
+        .Where(p => terms.Any(t => (p.Name + " " + (p.Category ?? "")).ToLowerInvariant().Contains(t)))
+        .Take(12)
+        .ToList();
+
+    if (!filtered.Any())
+    {
+        // simple fallback: sample first 8
+        filtered = allActive.Take(8).ToList();
+    }
+
+    // Serialize only filtered subset for prompt
+    var productsJson = JsonSerializer.Serialize(filtered);
+
+    var systemInstruction = "You are a retail shopping assistant. Return a concise helpful answer. " +
+        "Then output a product suggestion table between markers TABLE_START and TABLE_END with headers: ID | SKU | Name | Category | Price. " +
+        "Use at most 8 rows selected from the provided JSON subset. Do not invent products. If none are relevant, state 'No relevant products found.' and omit the table. " +
+        "JSON Subset:" + productsJson;
 
     var messages = new List<OpenAI.Chat.ChatMessage>
     {
-        OpenAI.Chat.ChatMessage.CreateSystemMessage("You are a retail assistant. Use the provided JSON product catalogue if helpful. Catalogue:" + productsJson),
+        OpenAI.Chat.ChatMessage.CreateSystemMessage(systemInstruction),
         OpenAI.Chat.ChatMessage.CreateUserMessage(req.message)
     };
 
@@ -125,7 +144,7 @@ app.MapPost("/api/chat/products", async (RetailMonolith.Models.ChatProductReques
         content = completion.Value.Content.Select(c => c.Text).ToArray()
     };
 
-    return Results.Ok(new { reply, products, raw });
+    return Results.Ok(new { reply, products = filtered, raw });
 });
 
 
