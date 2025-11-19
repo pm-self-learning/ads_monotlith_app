@@ -17,6 +17,7 @@ namespace RetailMonolith.Data
 
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderLine> OrderLines => Set<OrderLine>();
+        public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
       
 
